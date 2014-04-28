@@ -12,9 +12,10 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_swagger.docgenerator import DocumentationGenerator
 
 from rest_framework_swagger import SWAGGER_SETTINGS
+from pprint import pformat
 
 
-class SwaggerUIView(View):
+class SwaggerUIView(APIDocView):
 
     def get(self, request, *args, **kwargs):
 
@@ -22,9 +23,11 @@ class SwaggerUIView(View):
             raise PermissionDenied()
 
         template_name = "rest_framework_swagger/index.html"
+        discovery_url = "{}{}docs/api-docs/".format(
+                    self.base_uri, SWAGGER_SETTINGS.get('api_path', '/'))
         data = {
             'swagger_settings': {
-                'discovery_url': "%sapi-docs/" % request.build_absolute_uri(),
+                'discovery_url': discovery_url,
                 'api_key': SWAGGER_SETTINGS.get('api_key', ''),
                 'enabled_methods': mark_safe(
                     json.dumps( SWAGGER_SETTINGS.get('enabled_methods')))
@@ -54,13 +57,13 @@ class SwaggerResourcesView(APIDocView):
 
         for path in resources:
             apis.append({
-                'path': "/%s" % path,
+                'path': "%s" % path,
             })
 
         return Response({
             'apiVersion': SWAGGER_SETTINGS.get('api_version', ''),
             'swaggerVersion': '1.2',
-            'basePath': self.host.rstrip('/'),
+            'basePath': "{}{}".format(self.base_uri, request.path),
             'apis': apis
         })
 
@@ -78,12 +81,13 @@ class SwaggerApiView(APIDocView):
 
     def get(self, request, path):
         apis = self.get_api_for_resource(path)
+        print "PATH={}".format(path)
         generator = DocumentationGenerator()
 
         return Response({
             'apis': generator.generate(apis),
             'models': generator.get_models(apis),
-            'basePath': self.api_full_uri.rstrip('/'),
+            'basePath': self.base_uri,
         })
 
     def get_api_for_resource(self, filter_path):

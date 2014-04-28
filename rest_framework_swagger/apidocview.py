@@ -1,15 +1,22 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework_swagger import SWAGGER_SETTINGS
+from pprint import pformat
 
 class APIDocView(APIView):
 
     def initial(self, request, *args, **kwargs):
         self.permission_classes = (self.get_permission_class(request),)
         protocol = "https" if request.is_secure() else "http"
-        self.host = request.build_absolute_uri()
-        self.api_path = SWAGGER_SETTINGS['api_path']
-        self.api_full_uri = "%s://%s%s" % (protocol, request.get_host(), self.api_path)
+
+        if 'HTTP_X_FORWARDED_HOST' in request.META:
+            host_list = request.META['HTTP_X_FORWARDED_HOST'].split(',')
+            host = host_list[0].strip()
+        else:
+            host = request.get_host()
+
+        self.base_uri = "%s://%s" % (protocol, host)
+        self.base_uri = self.base_uri.rstrip('/')
 
         return super(APIDocView, self).initial(request, *args, **kwargs)
 
