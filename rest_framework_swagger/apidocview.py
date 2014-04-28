@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework_swagger import SWAGGER_SETTINGS
-from pprint import pformat
 
 class APIDocView(APIView):
 

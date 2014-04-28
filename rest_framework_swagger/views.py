@@ -12,7 +12,6 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_swagger.docgenerator import DocumentationGenerator
 
 from rest_framework_swagger import SWAGGER_SETTINGS
-from pprint import pformat
 
 
 class SwaggerUIView(APIDocView):
@@ -81,7 +80,6 @@ class SwaggerApiView(APIDocView):
 
     def get(self, request, path):
         apis = self.get_api_for_resource(path)
-        print "PATH={}".format(path)
         generator = DocumentationGenerator()
 
         return Response({
