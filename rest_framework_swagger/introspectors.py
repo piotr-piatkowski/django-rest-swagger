@@ -78,6 +78,9 @@ class BaseViewIntrospector(object):
         """
         return IntrospectorHelper.get_view_description(self.callback)
 
+    def get_swagger_docs(self):
+        return getattr(self.callback, 'swagger_docs', None)
+
 
 class BaseMethodIntrospector(object):
     __metaclass__ = ABCMeta
@@ -91,7 +94,17 @@ class BaseMethodIntrospector(object):
     def get_serializer_class(self):
         return self.parent.get_serializer_class()
 
+    def _get_swdocs(self, what):
+        swdocs = self.parent.get_swagger_docs()
+        if swdocs is not None and self.method in swdocs:
+            return swdocs[self.method].get(what, None)
+
     def get_summary(self):
+
+        sw_summary = self._get_swdocs('summary')
+        if sw_summary is not None:
+            return sw_summary
+
         docs = self.get_docs()
 
         # If there is no docstring on the method, get class docs
@@ -111,6 +124,10 @@ class BaseMethodIntrospector(object):
         listed. First, get the class docstring and then get the method's. The
         methods will always inherit the class comments.
         """
+        sw_notes = self._get_swdocs('notes')
+        if sw_notes is not None:
+            return sw_notes
+
         docstring = ""
 
         class_docs = trim_docstring(get_view_description(self.callback))
@@ -138,6 +155,21 @@ class BaseMethodIntrospector(object):
         body_params = self.build_body_parameters()
         form_params = self.build_form_parameters()
         query_params = self.build_query_params_from_docstring()
+
+        sw_params = self._get_swdocs('params')
+        if sw_params is not None:
+            for par in sw_params:
+                if par == 'PATH_PARAMS':
+                    params += path_params
+                elif par == 'BODY_PARAMS':
+                    params.append(body_params)
+                elif par == 'FORM_PARAMS':
+                    params += form_params
+                elif par == 'QUERY_PARAMS':
+                    params += query_params
+                else:
+                    params.append(par)
+            return params
 
         if path_params:
             params += path_params
