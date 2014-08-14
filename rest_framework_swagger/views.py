@@ -1,4 +1,7 @@
 import json
+import os
+import subprocess
+import socket
 
 from django.views.generic import View
 from django.utils.safestring import mark_safe
@@ -30,7 +33,8 @@ class SwaggerUIView(APIDocView):
                 'api_key': SWAGGER_SETTINGS.get('api_key', ''),
                 'enabled_methods': mark_safe(
                     json.dumps( SWAGGER_SETTINGS.get('enabled_methods')))
-            }
+            },
+            'release_info': self.get_git_info(),
         }
         response = render_to_response(template_name, RequestContext(request, data))
 
@@ -44,6 +48,21 @@ class SwaggerUIView(APIDocView):
             return False
 
         return True
+
+    def get_git_info(self):
+        module_dir = os.path.dirname(__file__)
+        root_dir = os.path.abspath("{}/../..".format(module_dir))
+
+        descr = subprocess.check_output(
+            ['git', 'describe', '--tags', 'HEAD'],
+            cwd=root_dir,
+            stderr=subprocess.STDOUT,
+        )
+
+        descr = descr.strip()
+
+        hostname = socket.gethostname()
+        return "{}@{}".format(descr, hostname)
 
 
 class SwaggerResourcesView(APIDocView):
