@@ -327,14 +327,25 @@ class ViewSetIntrospector(BaseViewIntrospector):
             yield ViewSetMethodIntrospector(self, methods[method], method)
 
     def _resolve_methods(self):
-        if not hasattr(self.pattern.callback, 'func_code') or \
-                not hasattr(self.pattern.callback, 'func_closure') or \
-                not hasattr(self.pattern.callback.func_code, 'co_freevars') or \
-                'actions' not in self.pattern.callback.func_code.co_freevars:
-            raise RuntimeError('Unable to use callback invalid closure/function specified.')
+        import six
 
-        idx = self.pattern.callback.func_code.co_freevars.index('actions')
-        return self.pattern.callback.func_closure[idx].cell_contents
+        callback = self.pattern.callback
+
+        try:
+            closure = six.get_function_closure(callback)
+            code = six.get_function_code(callback)
+
+            while getattr(code, 'co_name') != 'view':
+                # lets unwrap!
+                view = getattr(closure[0], 'cell_contents')
+                closure = six.get_function_closure(view)
+                code = six.get_function_code(view)
+
+            freevars = code.co_freevars
+        except (AttributeError, IndexError):
+            raise RuntimeError('Unable to use callback invalid closure/function specified.')
+        else:
+            return closure[freevars.index('actions')].cell_contents
 
 
 class ViewSetMethodIntrospector(BaseMethodIntrospector):
