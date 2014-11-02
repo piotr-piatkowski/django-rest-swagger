@@ -1732,7 +1732,13 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
       content = data.content.data;
       headers = data.getHeaders();
       contentType = headers["Content-Type"];
-      if (content === void 0) {
+      if(data.getHeader('X-Swagger-Disposition') == 'iframe') {
+        response_body = $('<iframe />', {
+            src: data.request.url,
+            width: '700px',
+            height: '300px'
+        })
+      } else if (content === void 0) {
         code = $('<code />').text("no content");
         pre = $('<pre class="json" />').append(code);
       } else if (contentType.indexOf("application/json") === 0 || contentType.indexOf("application/hal+json") === 0) {
@@ -1748,7 +1754,8 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
         code = $('<code />').text(content);
         pre = $('<pre class="json" />').append(code);
       }
-      response_body = pre;
+      if(!response_body)
+          response_body = pre;
       $(".request_url").html("<pre>" + data.request.url + "</pre>");
       $(".response_code", $(this.el)).html("<pre>" + data.status + "</pre>");
       $(".response_body", $(this.el)).html(response_body);
