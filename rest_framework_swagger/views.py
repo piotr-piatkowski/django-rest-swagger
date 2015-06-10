@@ -53,14 +53,16 @@ class SwaggerUIView(APIDocView):
         module_dir = os.path.dirname(__file__)
         root_dir = os.path.abspath("{}/../..".format(module_dir))
 
-        descr = subprocess.check_output(
-            ['git', 'describe', '--tags', 'HEAD'],
-            cwd=root_dir,
-            stderr=subprocess.STDOUT,
-        )
-
+        desc = os.path.join(root_dir, 'git-desc')
+        if os.path.exists(desc):
+            descr = open(desc).read()
+        else:
+            descr = subprocess.check_output(
+                ['git', 'describe', '--tags', 'HEAD'],
+                cwd=root_dir,
+                stderr=subprocess.STDOUT,
+            )
         descr = descr.strip()
-
         hostname = socket.gethostname()
         return "{}@{}".format(descr, hostname)
 
